@@ -90,7 +90,7 @@ Pricing data is provided by **LLMRates.ai** and is free, read-only, and updated 
 
 ## Contributing
 
-PRs and issues are welcome! The project is iterating quickly right now, so please **rebase** your branch onto the latest `master` before opening a PR to avoid messy merge conflicts.
+PRs and issues are welcome! The project is iterating quickly right now, so please **rebase** your branch onto the latest `main` before opening a PR to avoid messy merge conflicts.
 
 ## Screenshot
 
@@ -185,7 +185,7 @@ pnpm test             # 可选：运行单元测试
 
 ## 贡献
 
-欢迎提交 PR 与 Issue！项目近期迭代频繁，请在提交 PR 前将分支 **rebase** 到最新的 `master`，以避免复杂的合并冲突。
+欢迎提交 PR 与 Issue！项目近期迭代频繁，请在提交 PR 前将分支 **rebase** 到最新的 `main`，以避免复杂的合并冲突。
 
 ## 截图
 
