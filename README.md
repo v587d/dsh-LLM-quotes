@@ -13,7 +13,7 @@ A dsh web plugin that shows current LLM API prices for every provider you have c
 
 Data is sourced from [LLMRates.ai](https://www.llmrates.ai) (free, read-only, no API key, updated daily) and cached locally.
 
-
+![Settings → Models quote blocks](./assets/screenshot-1.png)
 
 ## What
 
@@ -36,13 +36,13 @@ Requires a running DeepSeek Harness (**dsh**) **web** profile (Node.js ≥ 22.19
 Install this plugin into your web profile with the dsh CLI:
 
 ```bash
-dsh plugin --profile web add "github:v587d/dsh-llm-quotes"
+dsh plugin --profile web add "github:v587d/dsh-LLM-quotes"
 ```
 
 For a reproducible, tamper-resistant install, pin a commit SHA instead of a moving branch:
 
 ```bash
-dsh plugin --profile web add "github:v587d/dsh-llm-quotes#<commit-sha>"
+dsh plugin --profile web add "github:v587d/dsh-LLM-quotes#<commit-sha>"
 ```
 
 Then (re)launch the web profile and open **Settings → Models** — each provider card now shows a Quotes block:
@@ -92,9 +92,6 @@ Pricing data is provided by **LLMRates.ai** and is free, read-only, and updated 
 
 PRs and issues are welcome! The project is iterating quickly right now, so please **rebase** your branch onto the latest `main` before opening a PR to avoid messy merge conflicts.
 
-## Screenshot
-
-![Settings → Models quote blocks](./assets/screenshot-1.png)
 
 ## License
 
@@ -109,6 +106,8 @@ MIT.
 这是一个 dsh Web 插件，会为你已配置的每一个厂商展示当前的 LLM API 价格。每个厂商卡片下方都会插入一个简洁的 **报价（Quotes）** 区块，包含每个模型的输入/输出价格，以及详情弹窗——无需切换标签页，也无需手动查询。
 
 价格数据来自 [LLMRates.ai](https://www.llmrates.ai)（免费、只读、无需 API Key、每日更新），并在本地缓存。
+
+![设置 → 模型 报价区块](./assets/screenshot-1.png)
 
 ## 这是什么
 
@@ -131,13 +130,13 @@ LLM 价格变动频繁，且分散在各家厂商的页面中。本插件把最�
 使用 dsh 命令行将该插件安装到你的 Web 配置中：
 
 ```bash
-dsh plugin --profile web add "github:v587d/dsh-llm-quotes"
+dsh plugin --profile web add "github:v587d/dsh-LLM-quotes"
 ```
 
 若希望安装可复现、防篡改，建议固定到具体的 commit SHA，而不是会移动的分支：
 
 ```bash
-dsh plugin --profile web add "github:v587d/dsh-llm-quotes#<commit-sha>"
+dsh plugin --profile web add "github:v587d/dsh-LLM-quotes#<commit-sha>"
 ```
 
 随后（重新）启动 Web 配置并打开 **设置 → 模型**，每个厂商卡片下方即会出现报价区块：
@@ -187,9 +186,6 @@ pnpm test             # 可选：运行单元测试
 
 欢迎提交 PR 与 Issue！项目近期迭代频繁，请在提交 PR 前将分支 **rebase** 到最新的 `main`，以避免复杂的合并冲突。
 
-## 截图
-
-![设置 → 模型 报价区块](./assets/screenshot-1.png)
 
 ## 许可证
 

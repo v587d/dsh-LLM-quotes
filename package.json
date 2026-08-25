@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc -b && tsdown",
+    "prepare": "pnpm run build",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run"
   },
