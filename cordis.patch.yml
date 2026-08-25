@@ -1,0 +1,4 @@
+# dsh-llm-quotes bundle patch: inserts its host row into the web profile roster.
+- insert:
+    - id: llm-quotes
+      name: dsh-llm-quotes

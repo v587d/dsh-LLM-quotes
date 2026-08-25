@@ -1,0 +1,849 @@
+/* dsh-llm-quotes styles: Settings → Models per-provider quote blocks, plus
+ * the prices panel (kept for its later Settings migration). */
+
+/* ------------------------------------------------------------------ */
+/* Prices panel (LlmQuotesPanel — currently unregistered)              */
+/* ------------------------------------------------------------------ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font-size: 12px;
+}
+
+/* Body below the header: takes the remaining dialog height so the table
+ * scrolls inside the fixed-size modal instead of growing past the screen. */
+.panelBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  padding: 0 24px 24px;
+}
+
+/* Prominent first-load state: spinner + English hint (data set is large). */
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  padding: 24px;
+  color: var(--dsw-alias-label-secondary, #61666b);
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-top-color: var(--dsw-alias-state-business-primary, #3964fe);
+  animation: llmQuotesSpin 0.8s linear infinite;
+}
+
+@keyframes llmQuotesSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-primary, #0f1115);
+}
+
+.loadingHint {
+  font-size: 12px;
+  max-width: 420px;
+  text-align: center;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toolbarTitle {
+  font-weight: 600;
+}
+
+.search {
+  box-sizing: border-box;
+  min-width: 180px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font-size: 12px;
+  outline: none;
+}
+
+.search:focus,
+.select:focus {
+  border-color: var(--dsw-alias-state-business-primary, #3964fe);
+}
+
+.select {
+  box-sizing: border-box;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font-size: 12px;
+  outline: none;
+}
+
+.button {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06));
+}
+
+.primaryButton {
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--dsw-alias-state-business-primary, #3964fe);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.primaryButton:hover {
+  filter: brightness(0.95);
+}
+
+.primaryButton:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.linkButton {
+  border: 0;
+  background: transparent;
+  color: var(--dsw-alias-state-business-primary, #3964fe);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+.metaLine {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 16px;
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-size: 11px;
+}
+
+.saved {
+  color: var(--dsw-static-green-500, #16a34a);
+  font-size: 11px;
+}
+
+.alerts {
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+}
+
+.alertsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.alertList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alertUnread {
+  color: var(--dsw-alias-state-error-primary, #dc2626);
+  font-weight: 500;
+}
+
+.alertRead {
+  opacity: 0.65;
+}
+
+.error {
+  color: var(--dsw-alias-state-error-primary, #dc2626);
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--dsw-alias-state-error-bg, rgba(220, 38, 38, 0.08));
+}
+
+.tableWrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
+  border-radius: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.04));
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table th {
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-weight: 500;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  position: sticky;
+  top: 0;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.colCheck {
+  width: 28px;
+  text-align: center;
+}
+
+.centerCell {
+  text-align: center;
+  color: var(--dsw-alias-label-caption, #81858c);
+  padding: 20px 8px;
+}
+
+.modelName {
+  font-weight: 500;
+}
+
+.specialTag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--dsw-alias-warn-bg, rgba(245, 158, 11, 0.12));
+  color: var(--dsw-static-amber-600, #b45309);
+  font-size: 10px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.activePage {
+  border-color: var(--dsw-alias-state-business-primary, #3964fe);
+  color: var(--dsw-alias-state-business-primary, #3964fe);
+  font-weight: 600;
+}
+
+.totalLabel {
+  margin-left: 6px;
+  color: var(--dsw-alias-label-caption, #81858c);
+}
+
+.settingsPanel {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary, #61666b);
+}
+
+.field input {
+  box-sizing: border-box;
+  width: 120px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font-size: 12px;
+  outline: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Settings → Models per-provider quote blocks                         */
+/* ------------------------------------------------------------------ */
+
+/* The settings.action occupant renders nothing visible itself; the hidden
+ * wrapper only hosts the portal tree for the per-card blocks. */
+.sqRoot {
+  display: none;
+}
+
+/* One block under one provider card. The card is a flex column, so the block
+ * simply participates as its next child. 
+ * The provider card (`li.rowCard`) is a flex column; the harness's Edit
+ * editor is appended after our anchor (React inserts at the list end), so
+ * without intervention the editor would render BELOW the quotes block.
+ * `order: 1` keeps the quotes block above that editor using pure CSS —
+ * no dsh markup is touched. */
+.sqAnchor {
+  order: 1;
+}
+
+.sqBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  font-size: 12px;
+}
+
+.sqHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* First header row: title + badge + status + union stats. */
+.sqHeaderTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Second header row (matched only): search left, Options right. */
+.sqSearchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sqTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary, #0f1115);
+}
+
+/* Model-name search box in the quote block header. */
+.sqSearch {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 120px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font-size: 12px;
+  outline: none;
+}
+
+.sqSearch::placeholder {
+  color: var(--dsw-alias-label-caption, #81858c);
+}
+
+.sqSearch:focus {
+  border-color: var(--dsw-alias-state-business-primary, #3964fe);
+}
+
+/* Union statistics line next to the search box. */
+.sqStats {
+  font-size: 11px;
+  color: var(--dsw-alias-label-caption, #81858c);
+  white-space: nowrap;
+}
+
+/* Dataset-only ("quotes extra") rows: lighter model name + neutral tag. */
+.sqDataOnlyName {
+  color: var(--dsw-alias-label-secondary, #61666b);
+}
+
+.sqDataOnlyBadge {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary, #61666b);
+  background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06));
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+/* Sortable table headers (input/output/ctx). */
+.sqSortableTh {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sqSortableTh:hover {
+  color: var(--dsw-alias-state-business-primary, #3964fe);
+}
+
+.sqHeaderActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.sqHint {
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-size: 11px;
+  padding: 4px 0;
+}
+
+.sqError {
+  color: var(--dsw-alias-state-error-primary, #dc2626);
+  font-size: 12px;
+}
+
+.sqTableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
+  border-radius: 8px;
+}
+
+.sqTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.sqTable th,
+.sqTable td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.04));
+  text-align: left;
+  white-space: nowrap;
+}
+
+.sqTable th {
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-weight: 500;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+}
+
+.sqTable tr:last-child td {
+  border-bottom: 0;
+}
+
+.sqUnmatchedRow td {
+  vertical-align: middle;
+}
+
+/* The associate/unlink action cell spans the price+detail columns; right
+ * align it so the button lines up with the detail buttons of matched rows. */
+.sqUnmatchedRow td:last-child {
+  text-align: right;
+}
+
+/* Row hover highlight; the alias token adapts to dark/light mode. */
+.sqTable tbody tr:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06));
+}
+
+/* Matched rows are clickable (open the model detail popup). */
+.sqClickableRow {
+  cursor: pointer;
+}
+
+/* Modality tags beside the model name; extra ones collapse into +N. */
+.sqMods {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.sqModTag {
+  flex: none;
+  font-size: 10px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-secondary, #61666b);
+  border: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
+  border-radius: 999px;
+  padding: 0 6px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+}
+
+/* Options dropdown in the quote block header. */
+.optionsWrap {
+  position: relative;
+}
+
+.optionsMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 4px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.optionsItem {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.optionsItem:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06));
+}
+
+/* Badges (shared with the quote block header). */
+
+.watchBadgeMatched {
+  font-size: 11px;
+  color: var(--dsw-static-green-500, #16a34a);
+  background: rgba(22, 163, 74, 0.08);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.watchBadgeUnmatched {
+  font-size: 11px;
+  color: var(--dsw-static-amber-600, #b45309);
+  background: var(--dsw-alias-warn-bg, rgba(245, 158, 11, 0.12));
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+.watchBadgeInactive {
+  font-size: 11px;
+  color: var(--dsw-alias-label-caption, #81858c);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+/* Detail column button (opens the model detail popup). */
+.detailButton {
+  border: 0;
+  background: transparent;
+  color: var(--dsw-alias-state-business-primary, #3964fe);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.detailButton:hover {
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared modal shell (detail popup + association pickers)              */
+/* ------------------------------------------------------------------ */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(9, 11, 15, 0.45);
+}
+
+.modalCard {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: min(78vh, 720px);
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
+}
+
+.modalTitle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary, #0f1115);
+}
+
+.modalClose {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.modalClose:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06));
+  color: var(--dsw-alias-label-primary, #0f1115);
+}
+
+.modalBody {
+  overflow-y: auto;
+  padding: 4px 16px 16px;
+}
+
+.detailProviderTag {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--dsw-static-green-500, #16a34a);
+  background: rgba(22, 163, 74, 0.08);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.detailSection {
+  padding-top: 14px;
+}
+
+.detailSection:first-child {
+  padding-top: 12px;
+}
+
+.detailSectionTitle {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dsw-alias-label-caption, #81858c);
+  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
+  padding-bottom: 6px;
+}
+
+.detailGrid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 20px;
+  row-gap: 6px;
+  align-items: baseline;
+}
+
+.detailField {
+  display: contents;
+}
+
+.detailKey {
+  color: var(--dsw-alias-label-secondary, #61666b);
+  font-size: 12px;
+}
+
+.detailValue {
+  margin: 0;
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+
+.detailValueYes {
+  color: var(--dsw-static-green-500, #16a34a);
+  font-weight: 600;
+}
+
+.detailValueNo {
+  color: var(--dsw-alias-label-caption, #81858c);
+}
+
+.detailValueLink {
+  color: var(--dsw-alias-state-business-primary, #3964fe);
+  text-decoration: none;
+}
+
+.detailValueLink:hover {
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ */
+/* Association picker modals: flat single-select lists (no dropdowns)   */
+/* ------------------------------------------------------------------ */
+
+/* Friendly note about excluded token/coding plans. */
+.pickerNote {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--dsw-alias-warn-bg, rgba(245, 158, 11, 0.12));
+  color: var(--dsw-static-amber-600, #b45309);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+.pickerList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  max-height: min(46vh, 380px);
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.pickerItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pickerItem:hover:not(:disabled):not(.pickerItemSelected) {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06));
+}
+
+.pickerItem:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pickerItemSelected {
+  border-color: var(--dsw-alias-state-business-primary, #3964fe);
+  background: var(--dsw-alias-state-business-bg, rgba(57, 100, 254, 0.06));
+  box-shadow: 0 0 0 1px var(--dsw-alias-state-business-primary, #3964fe);
+}
+
+.pickerItemName {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickerItemLocal {
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tag shown on disabled token/coding-plan rows. */
+.pickerTag {
+  margin-left: auto;
+  flex: none;
+  font-size: 10px;
+  color: var(--dsw-alias-label-caption, #81858c);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 999px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+/* Header tag naming the harness provider/model the picker associates. */
+.pickerTargetTag {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--dsw-static-green-500, #16a34a);
+  background: rgba(22, 163, 74, 0.08);
+  border-radius: 999px;
+  padding: 1px 8px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickerFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
+}
