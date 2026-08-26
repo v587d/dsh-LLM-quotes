@@ -57,6 +57,31 @@ export interface PriceInfo {
   readonly effectiveDate?: string
 }
 
+/**
+ * The numeric price fields of `PriceInfo`, kept in sync with the interface
+ * above. Watchlist snapshots and price-change comparisons only ever cover
+ * these fields: a new numeric dataset field cannot leak into a snapshot or
+ * comparison until it is deliberately added to the contract here.
+ */
+export const PRICE_FIELDS = [
+  'inputPricePerMillion',
+  'outputPricePerMillion',
+  'thinkingOutputPricePerMillion',
+  'cachedInputPricePerMillion',
+  'cachedWritePricePerMillion',
+  'imagePrice',
+  'imagePricePerMillion',
+  'audioPricePerHour',
+  'audioPricePerMillion',
+  'videoPrice',
+  'videoPricePerSecond',
+  'videoPricePerMillion',
+  'characterPricePerMillion',
+  'pagePrice',
+  'searchPricePerThousand',
+  'trackPrice',
+] as const satisfies readonly (keyof PriceInfo)[]
+
 /** One normalized model row for the UI. */
 export interface ModelInfo {
   readonly id: number
@@ -199,4 +224,46 @@ export interface HarnessProviderRef {
   readonly active: boolean
   /** The models this provider serves (explicit config or full catalog). */
   readonly models: readonly HarnessModelRef[]
+}
+
+/**
+ * Status values for watched models:
+ * - `active`: currently watching, prices will be tracked
+ * - `paused`: unfollowed but history preserved (the star is off)
+ * - `archived`: model no longer relevant, history kept
+ */
+export type WatchlistStatus = 'active' | 'paused' | 'archived'
+
+/** One complete price snapshot at a point in time. */
+export interface PriceSnapshot {
+  readonly time: string
+  readonly currency: string
+  readonly prices: Record<string, number | null>
+}
+
+/** One watched model record in the watchlist JSONL file. */
+export interface WatchlistRecord {
+  readonly key: string
+  readonly provider: string
+  readonly model: string
+  readonly modelName: string
+  readonly modalities: readonly string[]
+  readonly status: WatchlistStatus
+  readonly addedAt: string
+  readonly updatedAt: string
+  readonly priceHistory: readonly PriceSnapshot[]
+}
+
+/** Result of a price change comparison. */
+export interface PriceChangeResult {
+  readonly from: PriceSnapshot | null
+  readonly to: PriceSnapshot | null
+  /** Per price field: old value (null = not priced then) → new value. */
+  readonly changes: Record<string, { old: number | null; new: number | null }>
+  /**
+   * True when the two snapshots use different currencies: the numbers in
+   * `changes` are then not comparable and no up/down direction may be
+   * derived from them.
+   */
+  readonly currencyChanged?: boolean
 }

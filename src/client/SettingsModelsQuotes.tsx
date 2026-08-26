@@ -9,8 +9,9 @@
  *
  * Each block shows the configured provider's models with their latest input
  * and output prices plus a Details popup carrying every valued model-level
- * field. There is no separate Watch step: successfully configured models are
- * implicitly watched. Provider matching is association-first (provider-level
+ * field. Configured models are implicitly priced; the star toggles in the
+ * table rows and the popup follow/unfollow models (watchlist, see
+ * useWatchlist.ts). Provider matching is association-first (provider-level
  * manual association), then exact slug, then built-in alias; models then
  * match by slug/name, with a per-model manual association kept as the last
  * resort.
@@ -45,6 +46,8 @@ import { ModelPickerModal, ProviderPickerModal } from './AssociationPickers.tsx'
 import { ModelDetailModal } from './ModelDetailModal.tsx'
 import { findModelsSection, providerCardsOf } from './modelsSectionDom.ts'
 import { useQuotesData, type QuotesDataState } from './useQuotesData.ts'
+import { useWatchlist, watchlistKey } from './useWatchlist.ts'
+import { StarIcon } from './StarIcon.tsx'
 import css from './styles.module.css'
 
 /** Props for the injector: the injected translate faces + the quotes API. */
@@ -194,6 +197,7 @@ export function SettingsModelsQuotes({ t, api, tModels }: SettingsModelsQuotesPr
           t={t}
           quotes={quotes}
           displayName={card.displayName}
+          api={api}
         />,
         card.anchor,
       ))}
@@ -267,16 +271,19 @@ export interface ProviderQuoteBlockProps {
   quotes: QuotesDataState
   /** Display name of the harness provider this card represents. */
   displayName: string
+  /** API for watchlist sync. */
+  api: LlmQuotesApi
 }
 
 /** The quote block rendered under one provider card. */
-export function ProviderQuoteBlock({ t, quotes, displayName }: ProviderQuoteBlockProps) {
+export function ProviderQuoteBlock({ t, quotes, displayName, api }: ProviderQuoteBlockProps) {
   const [picker, setPicker] = useState<PickerState | null>(null)
   const [savedFlash, setSavedFlash] = useState(false)
   const [detailModel, setDetailModel] = useState<ModelInfo | null>(null)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [hideAllModels, setHideAllModels] = useState(false)
   const optionsRef = useRef<HTMLDivElement>(null)
+  const watchlist = useWatchlist(api)
 
   // Close the Options dropdown on outside click / Escape.
   useEffect(() => {
@@ -705,14 +712,24 @@ export function ProviderQuoteBlock({ t, quotes, displayName }: ProviderQuoteBloc
                       // Dataset-only rows: lighter model name + "quotes extra"
                       // tag; they are already the price source, so no manual
                       // association action (unlike the harness not-found rows).
+                      const extraKey = watchlistKey(row.quote.provider.slug, row.quote.slug)
+                      const extraWatched = watchlist.isWatched(extraKey)
                       return (
                         <tr
                           key={`extra-${row.ref.id}`}
-                          className={css.sqClickableRow}
+                          className={`${css.sqClickableRow}${extraWatched ? ` ${css.sqWatchedRow}` : ''}`}
                           title={t('sq.detail')}
                           onClick={() => setDetailModel(row.quote)}
                         >
                           <td>
+                            <button
+                              type="button"
+                              className={`${css.watchStar}${extraWatched ? ` ${css.watchStarActive}` : ''}`}
+                              title={extraWatched ? t('sq.unwatchlist') : t('sq.watchlist')}
+                              onClick={(e) => { e.stopPropagation(); watchlist.toggle(extraKey, row.quote ?? undefined, row.quote?.provider.slug) }}
+                            >
+                              <StarIcon size={14} filled={extraWatched} />
+                            </button>
                             <span className={css.sqDataOnlyName}>{row.quote.name}</span>
                             <span className={css.sqDataOnlyBadge}>{t('sq.quotesExtra')}</span>
                             {row.quote.modalities.length > 0 && <ModalityTags modalities={row.quote.modalities} />}
@@ -726,11 +743,19 @@ export function ProviderQuoteBlock({ t, quotes, displayName }: ProviderQuoteBloc
                     return (
                       <tr
                         key={row.ref.id}
-                        className={css.sqClickableRow}
+                        className={`${css.sqClickableRow}${watchlist.isWatched(watchlistKey(row.quote.provider.slug, row.quote.slug)) ? ` ${css.sqWatchedRow}` : ''}`}
                         title={t('sq.detail')}
                         onClick={() => setDetailModel(row.quote)}
                       >
                         <td>
+                          <button
+                            type="button"
+                            className={`${css.watchStar}${watchlist.isWatched(watchlistKey(row.quote.provider.slug, row.quote.slug)) ? ` ${css.watchStarActive}` : ''}`}
+                            title={watchlist.isWatched(watchlistKey(row.quote.provider.slug, row.quote.slug)) ? t('sq.unwatchlist') : t('sq.watchlist')}
+                            onClick={(e) => { e.stopPropagation(); watchlist.toggle(watchlistKey(row.quote!.provider.slug, row.quote!.slug), row.quote ?? undefined, row.quote?.provider.slug) }}
+                          >
+                            <StarIcon size={14} filled={watchlist.isWatched(watchlistKey(row.quote.provider.slug, row.quote.slug))} />
+                          </button>
                           <span className={css.modelName}>{row.quote.name}</span>
                           {row.quote.modalities.length > 0 && <ModalityTags modalities={row.quote.modalities} />}
                         </td>
@@ -759,7 +784,7 @@ export function ProviderQuoteBlock({ t, quotes, displayName }: ProviderQuoteBloc
       )}
 
       {detailModel !== null && (
-        <ModelDetailModal t={t} model={detailModel} onClose={() => setDetailModel(null)} />
+        <ModelDetailModal t={t} model={detailModel} onClose={() => setDetailModel(null)} api={api} />
       )}
     </div>
   )

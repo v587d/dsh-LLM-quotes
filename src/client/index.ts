@@ -4,10 +4,12 @@
  * quote block under every provider card). The browser only talks to
  * same-origin `/api/llm-quotes` endpoints.
  *
- * The former sidebar footer entry, the Model Watch, and price alerts are
- * gone: configured models are implicitly watched, so the quote blocks only
- * carry prices; the standalone prices panel is not wired to any seat yet
- * (kept as `LlmQuotesPanel` for its later Settings migration).
+ * Configured models are implicitly priced; an explicit watchlist (star
+ * toggles in the quote tables and the details popup) is persisted locally
+ * (localStorage) and mirrored to the host JSONL store — follow upserts an
+ * `active` record, unfollow pauses it so its price history survives. The
+ * standalone prices panel is not wired to any seat yet (kept as
+ * `LlmQuotesPanel` for its later Settings migration).
  * @module dsh-llm-quotes/client
  */
 
@@ -28,18 +30,32 @@ import type {
   ModelsResponse,
   ModelInfo,
   OverviewResponse,
+  PriceChangeResult,
+  PriceInfo,
+  PriceSnapshot,
   ProviderInfo,
   SettingsResponse,
+  WatchlistRecord,
+  WatchlistStatus,
 } from '../types.ts'
 import { en, zh, NS } from './locales.ts'
 import { SettingsModelsQuotes, type SettingsModelsQuotesProps } from './SettingsModelsQuotes.tsx'
+import {
+  ComposerModelSelect,
+  resolveSessionDirectory,
+  isSubagentSession,
+  type ModelSelection,
+} from './ComposerModelSelect.tsx'
 
 export { SettingsModelsQuotes } from './SettingsModelsQuotes.tsx'
 export type { SettingsModelsQuotesProps } from './SettingsModelsQuotes.tsx'
+export { ComposerModelSelect, resolveSessionDirectory, isSubagentSession } from './ComposerModelSelect.tsx'
+export type { ModelSelection, ModelDirectoryFace, ModelDirectoryState } from './ComposerModelSelect.tsx'
+export { priceSignalOf, type PriceSignal, type PriceSignalField } from './signals.ts'
 export { useQuotesData, type QuotesDataState } from './useQuotesData.ts'
 export * from './matching.ts'
 export { findModelsSection, providerCardsOf, cardDisplayName } from './modelsSectionDom.ts'
-
+export type { WatchlistStatus, PriceSnapshot, WatchlistRecord, PriceChangeResult } from '../types.ts'
 
 /** Client-side API surface for the Settings → Models quote blocks. */
 export interface LlmQuotesApi {
@@ -59,7 +75,30 @@ export interface LlmQuotesApi {
   associations(): Promise<readonly ManualAssociation[]>
   setAssociation(association: ManualAssociation): Promise<readonly ManualAssociation[]>
   removeAssociation(providerRoute: string, modelId: string): Promise<readonly ManualAssociation[]>
+  /** Watchlist: get all watched models. */
+  getWatchlist(): Promise<readonly WatchlistRecord[]>
+  /** Watchlist: add/update a watched model. */
+  upsertWatchlist(model: ModelInfo, providerSlug: string, status?: WatchlistStatus): Promise<WatchlistRecord>
+  /** Watchlist: permanently delete a record (unfollow keeps it as `paused`). */
+  removeWatchlist(key: string): Promise<boolean>
+  /** Watchlist: update status of a watched model. */
+  updateWatchlistStatus(key: string, status: WatchlistStatus): Promise<WatchlistRecord>
+  /** Watchlist: append a price snapshot. */
+  appendPriceSnapshot(key: string, price: PriceInfo): Promise<WatchlistRecord>
+  /** Watchlist: get price change between two time points. */
+  getPriceChange(key: string, from?: string, to?: string): Promise<PriceChangeResult>
+  /** Watchlist: batch price changes for many keys (absent keys omitted). */
+  priceChanges(keys: string[]): Promise<Record<string, PriceChangeResult | null>>
 }
+
+/**
+ * Status values for watched models:
+ * - `active`: currently watching, prices will be tracked
+ * - `paused`: unfollowed but history preserved (the star is off)
+ * - `archived`: model no longer relevant, history kept
+ */
+// Type re-exports from ../types.ts (WatchlistStatus, PriceSnapshot,
+// WatchlistRecord, PriceChangeResult) keep the API surface stable.
 
 /** Injected props for the Settings → Models quote blocks. */
 export interface LlmQuotesInjected {
@@ -220,13 +259,63 @@ function makeApi(connection: ConnectionHandle | undefined): LlmQuotesApi {
         body: JSON.stringify({ providerRoute, modelId }),
       },
     ).then((body) => body.associations),
+    // Watchlist endpoints
+    getWatchlist: () => apiFetch<{ records: readonly WatchlistRecord[] }>('/api/llm-quotes/watchlist')
+      .then((body) => body.records),
+    upsertWatchlist: (model, providerSlug, status) => apiFetch<{ record: WatchlistRecord }>(
+      '/api/llm-quotes/watchlist',
+      {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ model, providerSlug, status }),
+      },
+    ).then((body) => body.record),
+    removeWatchlist: (key) => apiFetch<{ removed: boolean }>(
+      '/api/llm-quotes/watchlist',
+      {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ key }),
+      },
+    ).then((body) => body.removed),
+    updateWatchlistStatus: (key, status) => apiFetch<{ record: WatchlistRecord }>(
+      '/api/llm-quotes/watchlist',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ key, status }),
+      },
+    ).then((body) => body.record),
+    appendPriceSnapshot: (key, price) => apiFetch<{ record: WatchlistRecord }>(
+      '/api/llm-quotes/watchlist',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ key, price }),
+      },
+    ).then((body) => body.record),
+    getPriceChange: (key, from, to) => {
+      const params = new URLSearchParams({ key })
+      if (from) params.set('from', from)
+      if (to) params.set('to', to)
+      return apiFetch<PriceChangeResult>(`/api/llm-quotes/watchlist/price-change?${params.toString()}`)
+    },
+    priceChanges: (keys) => {
+      if (keys.length === 0) return Promise.resolve({})
+      const params = new URLSearchParams({ keys: keys.join(',') })
+      return apiFetch<{ changes: Record<string, PriceChangeResult | null> }>(
+        `/api/llm-quotes/watchlist/price-changes?${params.toString()}`,
+      ).then((body) => body.changes)
+    },
   }
 }
 
 /**
  * Register the Settings → Models quote-block seat: a `settings.action`
  * occupant that renders nothing in the header and injects quote blocks under
- * every provider card of the Models section.
+ * every provider card of the Models section. Also takes the composer model
+ * seat (`conversation.input.model`) with a model selector that annotates
+ * watched models with watchlist price-change signal dots.
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
@@ -246,5 +335,31 @@ export function apply(ctx: ClientContext): void {
       inject: injected,
     },
     SettingsModelsQuotes,
+  ))
+
+  // Single-seat shadowing: the shipped ModelSelect registers at priority 0
+  // and "lowest renders", so this occupant must register BELOW it to win.
+  ctx.slots.inject('conversation.input.model', () => ctx.slots.register(
+    {
+      name: 'conversation.input.model',
+      priority: -1,
+      inject: (sessionId: string) => {
+        const api = makeApi(ctx.get('connection'))
+        const directory = resolveSessionDirectory(ctx, sessionId)
+        const available = !isSubagentSession(ctx, sessionId)
+        return {
+          available,
+          directory,
+          load: () => {
+            if (available) directory.load().catch(() => {})
+          },
+          select: (selection: ModelSelection) =>
+            available ? directory.select(selection).then(() => true, () => false) : Promise.resolve(false),
+          api,
+          t: ctx.locale.bind(NS),
+        }
+      },
+    },
+    ComposerModelSelect,
   ))
 }

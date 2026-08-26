@@ -847,3 +847,382 @@
   padding: 12px 16px;
   border-top: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
 }
+
+/* ------------------------------------------------------------------ */
+/* Watchlist star icon + row highlight                                  */
+/* ------------------------------------------------------------------ */
+
+/* Star button: inline, no background, subtle hover. */
+.watchStar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dsw-alias-label-caption, #81858c);
+  cursor: pointer;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.watchStar:hover {
+  color: var(--dsw-static-amber-500, #f59e0b);
+}
+
+/* Active (watched) star: amber/gold fill. */
+.watchStarActive {
+  color: var(--dsw-static-amber-500, #f59e0b);
+}
+
+.watchStarActive:hover {
+  color: var(--dsw-static-amber-600, #b45309);
+}
+
+/* Watched row highlight: subtle amber-tinted background that works in
+ * both dark and light mode via the dsh alias tokens. */
+.sqWatchedRow {
+  background: var(--dsw-alias-warn-bg, rgba(245, 158, 11, 0.08));
+}
+
+.sqWatchedRow:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(245, 158, 11, 0.14));
+}
+
+/* Larger star in the detail modal header. */
+.watchStarLarge {
+  width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  margin-top: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Composer model seat (ComposerModelSelect)                           */
+/* Port of the shipped ModelSelect look + watchlist signal dots.       */
+/* ------------------------------------------------------------------ */
+
+.msRoot {
+  min-width: 0;
+  position: relative;
+}
+
+.msTrigger {
+  min-width: 0;
+  max-width: min(360px, 45cqw);
+  height: 28px;
+  color: var(--dsw-alias-label-secondary, #565e6c);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 24px;
+  outline: none;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 0 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  display: flex;
+}
+
+.msTrigger:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128, 138, 155, 0.1));
+}
+
+.msTrigger:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3, #8b93a3);
+}
+
+.msTrigger:disabled {
+  color: var(--dsw-alias-label-dimmed, #9aa2b1);
+  cursor: default;
+}
+
+.msTriggerLabel {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.msTriggerEffort {
+  color: var(--dsw-alias-label-caption, #8b93a3);
+  flex: none;
+}
+
+.msChevron {
+  color: var(--dsw-alias-label-caption, #8b93a3);
+  flex: none;
+  transition: transform 0.12s;
+}
+
+.msChevronOpen {
+  transform: rotate(180deg);
+}
+
+.msMenu {
+  z-index: 20;
+  border: 1px solid var(--dsw-alias-border-inverted, #3a4050);
+  background: var(--dsw-specific-menu, #1e222b);
+  width: max-content;
+  min-width: min(240px, 100vw - 32px);
+  max-width: min(420px, 100vw - 32px);
+  max-height: min(360px, 100vh - 96px);
+  box-shadow: var(--dsw-shadow-lv3, 0 12px 32px rgba(0, 0, 0, 0.28));
+  color: var(--dsw-alias-label-primary, #e6e8ee);
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2, #4a5162);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2, #5a6274);
+  border-radius: 12px;
+  flex-direction: column;
+  padding: 4px;
+  display: flex;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  overflow: hidden;
+}
+
+.msStatus,
+.msEmpty {
+  color: var(--dsw-alias-label-tertiary, #8b93a3);
+  padding: 10px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.msError,
+.msWarning {
+  background: var(--dsw-alias-interactive-bg-hover-danger, rgba(220, 38, 38, 0.12));
+  color: var(--dsw-alias-state-error-primary, #f87171);
+  border-radius: 8px;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+  padding: 7px 8px;
+  font-size: 12px;
+  line-height: 18px;
+  display: flex;
+}
+
+.msWarning {
+  background: var(--dsw-alias-bg-module-platform, rgba(128, 138, 155, 0.12));
+  color: var(--dsw-alias-state-warn-label, #fbbf24);
+}
+
+.msRetry {
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  flex: none;
+  padding: 0;
+  font-weight: 600;
+}
+
+.msGroups {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.msGroup + .msGroup {
+  margin-top: 4px;
+}
+
+.msGroupTitle {
+  z-index: 1;
+  background: var(--dsw-specific-menu, #1e222b);
+  color: var(--dsw-alias-label-tertiary, #8b93a3);
+  padding: 5px 8px 3px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  position: sticky;
+  top: 0;
+}
+
+.msOption {
+  box-sizing: border-box;
+  width: auto;
+  min-width: 100%;
+  min-height: 38px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  outline: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  display: flex;
+}
+
+.msOption:hover:not(:disabled),
+.msOption:focus-visible {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128, 138, 155, 0.1));
+}
+
+.msSelected {
+  background: transparent;
+}
+
+.msOption:disabled {
+  color: var(--dsw-alias-label-dimmed, #9aa2b1);
+  cursor: default;
+}
+
+.msOptionCopy {
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.msModelName {
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  overflow: hidden;
+}
+
+.msDescription {
+  color: var(--dsw-alias-label-tertiary, #8b93a3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 18px;
+  overflow: hidden;
+}
+
+/* Fixed-width slot so the check stays right-aligned with/without a dot. */
+.msSignalSlot {
+  flex: 0 0 12px;
+  place-items: center;
+  display: grid;
+}
+
+.msCheck {
+  color: var(--dsw-alias-label-primary, #e6e8ee);
+  flex: 0 0 18px;
+  place-items: center;
+  display: grid;
+}
+
+/* Signal dots: red = up, green = down, gray = unchanged / no comparison. */
+.msDotUp,
+.msDotDown,
+.msDotNone {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.msDotUp {
+  background: var(--dsw-alias-state-error-primary, #ef4444);
+}
+
+.msDotDown {
+  background: var(--dsw-alias-state-success-primary, #22c55e);
+}
+
+.msDotNone {
+  background: var(--dsw-alias-label-tertiary, #8b93a3);
+}
+
+.msCell {
+  box-sizing: border-box;
+  width: auto;
+  min-width: 100%;
+  height: 40px;
+  color: var(--dsw-alias-label-primary, #e6e8ee);
+  cursor: pointer;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  font-size: 14px;
+  line-height: 22px;
+  display: flex;
+}
+
+.msCell:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128, 138, 155, 0.1));
+}
+
+.msCellLabel {
+  white-space: nowrap;
+  flex: none;
+}
+
+.msCellValue {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  min-width: 0;
+  color: var(--dsw-alias-label-tertiary, #8b93a3);
+  flex: auto;
+  overflow: hidden;
+}
+
+.msCellChevron {
+  color: var(--dsw-alias-label-tertiary, #8b93a3);
+  flex: none;
+}
+
+/* Hover tooltip (portal to body; fixed-positioned above the row). */
+.msTooltip {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  transform: translateX(-50%);
+  max-width: 280px;
+  border: 1px solid var(--dsw-alias-border-inverted, #3a4050);
+  background: var(--dsw-specific-menu, #1e222b);
+  box-shadow: var(--dsw-shadow-lv3, 0 12px 32px rgba(0, 0, 0, 0.28));
+  color: var(--dsw-alias-label-primary, #e6e8ee);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.msTooltipHeader {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.msTooltipRange {
+  color: var(--dsw-alias-label-tertiary, #8b93a3);
+  margin-bottom: 4px;
+}
+
+.msTooltipRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.msTooltipLabel {
+  color: var(--dsw-alias-label-tertiary, #8b93a3);
+  white-space: nowrap;
+}
+
+.msTooltipValue {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

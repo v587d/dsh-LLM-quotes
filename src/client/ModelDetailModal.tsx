@@ -13,8 +13,11 @@ import { useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ModelInfo, PriceInfo } from '../types.ts'
+import type { LlmQuotesApi } from './index.ts'
 import { NS } from './locales.ts'
 import { formatContext, formatPrice, priceUnitPriority } from './format.ts'
+import { useWatchlist, watchlistKey } from './useWatchlist.ts'
+import { StarIcon } from './StarIcon.tsx'
 import css from './styles.module.css'
 
 /** One rendered key/value row inside a details section. */
@@ -27,6 +30,8 @@ export interface ModelDetailModalProps {
   t: TranslateNS<typeof NS>
   model: ModelInfo
   onClose: () => void
+  /** API for watchlist sync. */
+  api?: LlmQuotesApi
 }
 
 /** Format an ISO date as `YYYY-MM-DD`. */
@@ -183,7 +188,10 @@ export function DetailSection({ title, fields }: { title: string; fields: readon
  * The modal popup. Portaled to `document.body` so the settings dialog
  * cannot clip or overlay it. Clicking the backdrop or pressing Escape closes.
  */
-export function ModelDetailModal({ t, model, onClose }: ModelDetailModalProps) {
+export function ModelDetailModal({ t, model, onClose, api }: ModelDetailModalProps) {
+  const watchlist = useWatchlist(api)
+  const isWatched = watchlist.isWatched(watchlistKey(model.provider.slug, model.slug))
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') onClose()
@@ -209,6 +217,14 @@ export function ModelDetailModal({ t, model, onClose }: ModelDetailModalProps) {
       >
         <div className={css.modalHeader}>
           <div className={css.modalTitle}>
+            <button
+              type="button"
+              className={`${css.watchStar} ${css.watchStarLarge}${isWatched ? ` ${css.watchStarActive}` : ''}`}
+              title={isWatched ? t('sq.unwatchlist') : t('sq.watchlist')}
+              onClick={() => watchlist.toggle(watchlistKey(model.provider.slug, model.slug), model, model.provider.slug)}
+            >
+              <StarIcon size={18} filled={isWatched} />
+            </button>
             <span>{model.name}</span>
             <span className={css.detailProviderTag}>{model.provider.name}</span>
           </div>

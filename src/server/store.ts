@@ -4,9 +4,8 @@
  * This is intentionally a thin wrapper over `~/.dsh/llm-quotes.json`.
  * All writes are atomic JSON file replacements.
  *
- * Former watch targets and price-change alerts were removed: configured
- * harness models are implicitly the watched set, so no explicit watch vote
- * or alert ring exists anymore.
+ * The watchlist (follow/pause/archive records with price history) lives in
+ * its own JSONL file (`~/.dsh/watchlist.jsonl`) — see watchlist.ts.
  * @module dsh-llm-quotes/server/store
  */
 

@@ -1,7 +1,7 @@
 /**
  * LLM Quotes panel: search/filter, price table with a Details popup, compare,
- * and local settings. The former Watch toggles and price alerts are gone —
- * configured models are implicitly watched; the Details popup shows every
+ * and local settings. This standalone panel carries no watch toggles (the
+ * quote blocks in Settings → Models do); the Details popup shows every
  * valued model-level field.
  * @module dsh-llm-quotes/client/LlmQuotesPanel
  */

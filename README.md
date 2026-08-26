@@ -22,8 +22,23 @@ Data is sourced from [LLMRates.ai](https://www.llmrates.ai) (free, read-only, no
 - Per-model **input / output** prices (per 1M tokens by default).
 - A **Details** popup showing every valued model field — context window, max output, modalities, capabilities, release/knowledge dates, and all price rows (tiers, unit, region, source).
 - Smart matching from dsh provider routes to LLMRates slugs, with manual association only as a last resort.
+- A **watchlist** (star toggles in the quote tables and the details popup): followed models are tracked in `~/.dsh/llm-quotes-watchlist.jsonl` with price history — unfollow pauses the record instead of deleting it, and price snapshots are taken after each dataset refresh, so trends stay computable.
 
-There is **no separate Watch step** — configured models are implicitly priced.
+Configured models are implicitly priced; the watchlist is an explicit extra for tracking.
+
+## Watchlist & price signals
+
+Click the star next to a model (quote table or details popup) to **follow** it — the model is tracked in `~/.dsh/llm-quotes-watchlist.jsonl` with its price history. Unfollow **pauses** the record instead of deleting it, so history survives; the star goes off and the model stops signaling.
+
+![Watchlist stars in Settings → Models](./assets/my-watchlist.png)
+
+In the composer's **select model menu** (bottom-right of the input box), every currently watched model carries a price-change signal dot: 🔴 red = price(s) up, 🟢 green = price(s) down, ⚪ gray = watched but unchanged (or not enough history yet). Hover a dot for the from → to details per field.
+
+![Model menu signal dots](./assets/model-menu-signal.png)
+
+![Price up tooltip](./assets/price-up.png) ![Price down tooltip](./assets/price-down.png)
+
+Price history grows automatically: after each dataset refresh the host snapshots the prices of all active watchlist records (deduplicated — history only grows when prices actually change), and the comparison only covers the explicit `PRICE_FIELDS` contract (same-currency snapshots; a currency change is reported as such, never compared numerically).
 
 ## Why
 
@@ -71,8 +86,9 @@ The bundle patch in `cordis.patch.yml` registers the host plugin row; the browse
 - **Per-provider quote blocks** in Settings → Models (one block per configured provider).
 - **Model details popup** — every valued model-level field and price row.
 - **Slug-based provider matching** — alias map + provider-level association; per-model association only as a last resort.
+- **Watchlist with price history** — star toggles follow/unfollow; unfollow pauses the `~/.dsh/llm-quotes-watchlist.jsonl` record (history kept), and active records get a price snapshot after each dataset refresh. The composer model menu shows per-model price-change dots (red/green/gray) with from → to details on hover.
 - **Daily auto-sync** — dataset refreshed at most once per calendar day; serves the last good local snapshot on failure.
-- **Local-only persistence** — settings & associations in `~/.dsh/llm-quotes.json`; dataset snapshot in `~/.dsh/llm-quotes-data.json`. No accounts, no telemetry, no cloud.
+- **Local-only persistence** — settings & associations in `~/.dsh/llm-quotes.json`; dataset snapshot in `~/.dsh/llm-quotes-data.json`; watchlist in `~/.dsh/llm-quotes-watchlist.jsonl`. No accounts, no telemetry, no cloud.
 - **Plan-aware** — token/coding plans are excluded from provider association (only usage-based API pricing is shown).
 
 ## Data Source & Attribution
@@ -83,8 +99,8 @@ Pricing data is provided by **LLMRates.ai** and is free, read-only, and updated 
 
 ## Roadmap
 
-- **Price-trend tracking** — chart historical prices for the models you actually use and surface changes over time.
-- **Watchlist & alerts** — pin specific models/providers and get notified on price drops or increases.
+- **Price-trend tracking** — chart historical prices for the models you actually use and surface changes over time (price history is already collected).
+- **Watchlist alerts** — get notified on price drops or increases for followed models.
 - **Compare view** — side-by-side pricing across providers (the standalone prices panel is already built and staged for this migration).
 - **More locales** — beyond English / Simplified Chinese.
 
@@ -116,8 +132,23 @@ MIT.
 - 每个模型的 **输入 / 输出** 价格（默认按每百万 token 计价）。
 - 一个 **详情** 弹窗，展示模型的所有有效字段——上下文窗口、最大输出、模态、能力、发布/知识截止日期，以及全部价格行（档位、计价单位、区域、来源）。
 - 智能匹配：从 dsh 厂商路由映射到 LLMRates 的 slug，仅在最后兜底时才需要手动关联。
+- **关注列表（watchlist）**：报价表格与详情弹窗中的星标可关注模型，关注记录连同价格历史存入 `~/.dsh/llm-quotes-watchlist.jsonl`——取消关注只会将记录标记为 `paused`（历史保留），每次数据集刷新后会自动为关注中的模型追加价格快照，便于后续做走势分析。
 
-本插件 **没有独立的「监控 / Watch」步骤**——已配置的模型即为隐式纳入报价。
+已配置的模型隐式纳入报价；关注列表是额外的显式追踪功能。
+
+## 关注列表与价格信号
+
+点击模型旁的星标（报价表格或详情弹窗）即可**关注**该模型——记录连同价格历史存入 `~/.dsh/llm-quotes-watchlist.jsonl`。取消关注只会将记录标记为 `paused`（历史保留），星标熄灭，同时该模型不再显示信号点。
+
+![设置 → 模型 中的关注星标](./assets/my-watchlist.png)
+
+在输入框右下角的**模型选择菜单**中，每个当前关注中的模型都会带一个价格变化信号点：🔴 红点 = 涨价，🟢 绿点 = 降价，⚪ 灰点 = 价格不变（或历史尚不足）。鼠标悬停在点上即可看到每个字段的 from → to 明细。
+
+![模型菜单信号点](./assets/model-menu-signal.png)
+
+![涨价提示](./assets/price-up.png) ![降价提示](./assets/price-down.png)
+
+价格历史自动累积：每次数据集刷新后，host 会为所有 active 关注记录追加价格快照（已去重——价格没变就不会增长历史）；对比只覆盖显式的 `PRICE_FIELDS` 契约字段，且仅在币种一致的快照间进行（币种变化会明确提示，绝不跨币种比价）。
 
 ## 为什么
 
@@ -165,8 +196,9 @@ pnpm test             # 可选：运行单元测试
 - **按厂商展示报价区块**：在「设置 → 模型」中，每个已配置厂商各显示一块报价。
 - **模型详情弹窗**：展示模型所有有效字段与价格行。
 - **基于 slug 的厂商匹配**：内置别名映射 + 厂商级关联；仅在最后兜底时做模型级手动关联。
+- **带价格历史的关注列表**：星标关注/取消关注；取消关注只是把 `~/.dsh/llm-quotes-watchlist.jsonl` 中的记录标记为 `paused`（历史保留），数据集刷新后自动为关注中的模型追加价格快照。输入框的模型选择菜单中会为关注中的模型显示价格变化信号点（红/绿/灰），悬停可见 from → to 明细。
 - **每日自动同步**：数据每天最多刷新一次；失败时继续提供上一次成功的本地快照。
-- **纯本地存储**：设置与关联存于 `~/.dsh/llm-quotes.json`，数据集快照存于 `~/.dsh/llm-quotes-data.json`。无账号、无埋点、无云端。
+- **纯本地存储**：设置与关联存于 `~/.dsh/llm-quotes.json`，数据集快照存于 `~/.dsh/llm-quotes-data.json`，关注列表存于 `~/.dsh/llm-quotes-watchlist.jsonl`。无账号、无埋点、无云端。
 - **区分订阅计划**：厂商关联时会排除 Token / Coding Plan 等订阅型计划，仅展示按量计费（per-token）的 API 价格。
 
 ## 数据来源与署名
@@ -177,8 +209,8 @@ pnpm test             # 可选：运行单元测试
 
 ## 路线图
 
-- **价格走势跟踪**：基于你常用的模型，绘制历史价格曲线并提示变化。
-- **关注列表与提醒（Watchlist）**：收藏特定模型 / 厂商，价格涨跌时及时提醒。
+- **价格走势跟踪**：基于你常用的模型，绘制历史价格曲线并提示变化（价格历史已在持续采集）。
+- **关注列表提醒（Alerts）**：关注模型的降价/涨价提醒。
 - **对比视图**：跨厂商并排比价（独立价格面板已构建，待迁移至此）。
 - **更多语言**：在英文 / 简体中文之外增加更多语言。
 

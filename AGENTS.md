@@ -1,6 +1,6 @@
 # dsh-LLM-quotes
 
-A DeepSeek Harness (dsh) web plugin that provides **the latest LLM provider API prices** inside the **Settings → Models** page: every configured provider card gets a quote block with per-model input/output prices and a details popup (every valued model-level field), with provider-level association and slug-based model matching (manual per-model association only as a last resort). There is no separate Watch step — configured models are implicitly watched. A standalone prices panel (search/compare) is kept for a later migration. Settings and associations (provider-level in localStorage, model-level in the host store) are persisted locally.
+A DeepSeek Harness (dsh) web plugin that provides **the latest LLM provider API prices** inside the **Settings → Models** page: every configured provider card gets a quote block with per-model input/output prices and a details popup (every valued model-level field), with provider-level association and slug-based model matching (manual per-model association only as a last resort). Configured models are implicitly priced; an explicit **watchlist** (star toggles in the quote tables and the details popup) is persisted to `~/.dsh/llm-quotes-watchlist.jsonl` — follow upserts an `active` record, unfollow **pauses** it (status `paused`, history kept) so price trends stay computable, and the host snapshots active records after each dataset refresh. A standalone prices panel (search/compare) is kept for a later migration. Settings and associations (provider-level in localStorage, model-level in the host store) are persisted locally.
 
 ## Tech Stack
 
@@ -13,6 +13,7 @@ A DeepSeek Harness (dsh) web plugin that provides **the latest LLM provider API 
 - Local-only files:
   - `~/.dsh/llm-quotes.json` — user config: settings, model-level associations (JSON chosen for zero-dependency parsing in TS; YAML can be considered later if a human-edited config becomes more important).
   - `~/.dsh/llm-quotes-data.json` — last successfully fetched LLMRates dataset snapshot; written only after a successful fetch.
+  - `~/.dsh/llm-quotes-watchlist.jsonl` — watched models with price history (status lifecycle `active`/`paused`/`archived`; unfollow pauses, it never deletes the record).
 - No accounts, no registration, no telemetry, no cloud storage.
 
 ## Project Layout
@@ -41,13 +42,16 @@ dsh-LLM-quotes/
 │   │   ├── SettingsModelsQuotes.tsx  # per-provider quote blocks (portals)
 │   │   ├── useQuotesData.ts   # shared quotes data hook
 │   │   ├── ModelDetailModal.tsx  # model detail popup (all valued fields)
+│   │   ├── useWatchlist.ts   # star/follow state (localStorage + host sync)
+│   │   ├── StarIcon.tsx      # star icon for watchlist toggles
 │   │   ├── matching.ts         # provider/model matching + associations
 │   │   ├── modelsSectionDom.ts # Models-section DOM anchors (no hashed classes)
 │   │   ├── providerAssociations.ts  # provider-level associations (localStorage)
 │   │   ├── LlmQuotesPanel.tsx  # prices panel (kept for later migration)
 │   │   └── styles.module.css
 │   └── server/
-│       ├── routes.ts       # same-origin JSON API
+│       ├── routes.ts       # same-origin JSON API (incl. watchlist endpoints)
+│       ├── watchlist.ts    # watchlist JSONL persistence (status + price history)
 │       └── store.ts        # local JSON store / settings / associations
 ├── tests/                  # vitest unit tests
 └── scripts/                # optional Python helper scripts (not core)
