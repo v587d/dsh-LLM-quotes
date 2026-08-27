@@ -35,6 +35,7 @@ describe('makeLlmQuotesRoutes', () => {
     expect(paths).toContain('/api/llm-quotes/settings')
     expect(paths).toContain('/api/llm-quotes/associations')
     expect(paths).toContain('/api/llm-quotes/provider-models')
+    expect(paths).toContain('/api/llm-quotes/rates')
     expect(paths).toContain('/api/llm-quotes/watchlist')
     expect(paths).toContain('/api/llm-quotes/watchlist/price-change')
     expect(paths).toContain('/api/llm-quotes/watchlist/price-changes')

@@ -131,6 +131,19 @@ export interface MetaResponse {
   readonly updatedAt: string | null
 }
 
+/**
+ * Browser-facing FX rates payload: `rates[code]` is the number of that
+ * currency per 1 `base` (e.g. from open.er-api.com). Used to normalize mixed
+ * currencies in the compare table. `stale` marks a built-in approximation
+ * used when the live API is unavailable.
+ */
+export interface FxResponse {
+  readonly base: string
+  readonly rates: Readonly<Record<string, number>>
+  readonly fetchedAt: number
+  readonly stale: boolean
+}
+
 /** Browser-facing overview payload. */
 export interface OverviewResponse {
   readonly fetchedAt: number

@@ -21,6 +21,7 @@ Data is sourced from [LLMRates.ai](https://www.llmrates.ai) (free, read-only, no
 
 - Per-model **input / output** prices (per 1M tokens by default).
 - A **Details** popup showing every valued model field — context window, max output, modalities, capabilities, release/knowledge dates, and all price rows (tiers, unit, region, source).
+- A **Compare** dropdown in the Details popup — side-by-side comparison against up to 10 other models (see [Compare across providers](#compare-across-providers)).
 - Smart matching from dsh provider routes to LLMRates slugs, with manual association only as a last resort.
 - A **watchlist** (star toggles in the quote tables and the details popup): followed models are tracked in `~/.dsh/llm-quotes-watchlist.jsonl` with price history — unfollow pauses the record instead of deleting it, and price snapshots are taken after each dataset refresh, so trends stay computable.
 
@@ -39,6 +40,12 @@ In the composer's **select model menu** (bottom-right of the input box), every c
 ![Price up tooltip](./assets/price-up.png) ![Price down tooltip](./assets/price-down.png)
 
 Price history grows automatically: after each dataset refresh the host snapshots the prices of all active watchlist records (deduplicated — history only grows when prices actually change), and the comparison only covers the explicit `PRICE_FIELDS` contract (same-currency snapshots; a currency change is reported as such, never compared numerically).
+
+## Compare across providers
+
+From any model's **Details** popup, open **Compare** to check the same model across providers. A provider tree loads each provider's models lazily on expand (each node is disabled while loading); checking models builds a side-by-side table aligned to the target model's field set — the target is the first column, and a model that lacks a target field shows `—`. Up to 10 models can be added (each column has a remove button); prices are normalized to the target's currency via cached ECB/Frankfurter rates; DeepSeek-style off-peak rows are standardized onto the standard tier; the standout value of each row (max for capacity, min for price) is highlighted; and the selection is persisted in localStorage so reopening the popup restores it.
+
+![Model compare in the Details popup](./assets/compare%20prices.png)
 
 ## Why
 
@@ -85,6 +92,7 @@ The bundle patch in `cordis.patch.yml` registers the host plugin row; the browse
 
 - **Per-provider quote blocks** in Settings → Models (one block per configured provider).
 - **Model details popup** — every valued model-level field and price row.
+- **Compare across providers** — from the Details popup, side-by-side pricing/fields against up to 10 other models, with currency normalization (cached ECB/Frankfurter FX), off-peak tier standardization, best-value highlighting, and localStorage persistence.
 - **Slug-based provider matching** — alias map + provider-level association; per-model association only as a last resort.
 - **Watchlist with price history** — star toggles follow/unfollow; unfollow pauses the `~/.dsh/llm-quotes-watchlist.jsonl` record (history kept), and active records get a price snapshot after each dataset refresh. The composer model menu shows per-model price-change dots (red/green/gray) with from → to details on hover.
 - **Daily auto-sync** — dataset refreshed at most once per calendar day; serves the last good local snapshot on failure.
@@ -101,7 +109,7 @@ Pricing data is provided by **LLMRates.ai** and is free, read-only, and updated 
 
 - **Price-trend tracking** — chart historical prices for the models you actually use and surface changes over time (price history is already collected).
 - **Watchlist alerts** — get notified on price drops or increases for followed models.
-- **Compare view** — side-by-side pricing across providers (the standalone prices panel is already built and staged for this migration).
+- **Standalone prices panel** — migrate the built but unregistered prices panel (its own search/compare view) into a Settings seat; the Details-popup compare is already shipped.
 - **More locales** — beyond English / Simplified Chinese.
 
 ## Contributing
@@ -131,6 +139,7 @@ MIT.
 
 - 每个模型的 **输入 / 输出** 价格（默认按每百万 token 计价）。
 - 一个 **详情** 弹窗，展示模型的所有有效字段——上下文窗口、最大输出、模态、能力、发布/知识截止日期，以及全部价格行（档位、计价单位、区域、来源）。
+- 详情弹窗内的 **对比** 下拉——与最多 10 个其它模型并排对比（参见 [跨厂商对比](#跨厂商对比)）。
 - 智能匹配：从 dsh 厂商路由映射到 LLMRates 的 slug，仅在最后兜底时才需要手动关联。
 - **关注列表（watchlist）**：报价表格与详情弹窗中的星标可关注模型，关注记录连同价格历史存入 `~/.dsh/llm-quotes-watchlist.jsonl`——取消关注只会将记录标记为 `paused`（历史保留），每次数据集刷新后会自动为关注中的模型追加价格快照，便于后续做走势分析。
 
@@ -149,6 +158,12 @@ MIT.
 ![涨价提示](./assets/price-up.png) ![降价提示](./assets/price-down.png)
 
 价格历史自动累积：每次数据集刷新后，host 会为所有 active 关注记录追加价格快照（已去重——价格没变就不会增长历史）；对比只覆盖显式的 `PRICE_FIELDS` 契约字段，且仅在币种一致的快照间进行（币种变化会明确提示，绝不跨币种比价）。
+
+## 跨厂商对比
+
+在任意模型的**详情**弹窗中打开 **对比**，即可跨厂商对比同一模型。厂商树在展开时才按需加载各厂商的模型（每个节点加载中禁用重复点击）；勾选模型后生成对齐目标模型字段的并排表格——目标模型为第一列，某模型缺少目标字段时显示 `—`。最多可添加 10 个模型（每列都有移除按钮）；价格通过缓存的 ECB/Frankfurter 汇率统一换算为目标币种；DeepSeek 这类 off-peak 优惠价会被统一到标准价档位；每行的“最值”（容量取最大、价格取最小）会高亮；选择结果存入 localStorage，重新打开弹窗即可恢复。
+
+![详情弹窗中的模型对比](./assets/compare%20prices.png)
 
 ## 为什么
 
@@ -195,6 +210,7 @@ pnpm test             # 可选：运行单元测试
 
 - **按厂商展示报价区块**：在「设置 → 模型」中，每个已配置厂商各显示一块报价。
 - **模型详情弹窗**：展示模型所有有效字段与价格行。
+- **跨厂商对比**：在详情弹窗中与最多 10 个其它模型并排对比价格/字段，支持币种归一（缓存的 ECB/Frankfurter 汇率）、off-peak 优惠档统一到标准档、最值高亮，以及 localStorage 持久化。
 - **基于 slug 的厂商匹配**：内置别名映射 + 厂商级关联；仅在最后兜底时做模型级手动关联。
 - **带价格历史的关注列表**：星标关注/取消关注；取消关注只是把 `~/.dsh/llm-quotes-watchlist.jsonl` 中的记录标记为 `paused`（历史保留），数据集刷新后自动为关注中的模型追加价格快照。输入框的模型选择菜单中会为关注中的模型显示价格变化信号点（红/绿/灰），悬停可见 from → to 明细。
 - **每日自动同步**：数据每天最多刷新一次；失败时继续提供上一次成功的本地快照。
@@ -211,7 +227,7 @@ pnpm test             # 可选：运行单元测试
 
 - **价格走势跟踪**：基于你常用的模型，绘制历史价格曲线并提示变化（价格历史已在持续采集）。
 - **关注列表提醒（Alerts）**：关注模型的降价/涨价提醒。
-- **对比视图**：跨厂商并排比价（独立价格面板已构建，待迁移至此）。
+- **独立价格面板**：把已构建但未注册的价格面板（其自带的搜索/对比视图）迁移到某个设置入口；详情弹窗内的对比已上线。
 - **更多语言**：在英文 / 简体中文之外增加更多语言。
 
 ## 贡献

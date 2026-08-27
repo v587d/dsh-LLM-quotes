@@ -16,6 +16,12 @@
  * match by slug/name, with a per-model manual association kept as the last
  * resort.
  *
+ * Visibility is one simple switch: by default every model row is hidden
+ * except the watchlisted ones (matched rows and quotes-extra rows can both
+ * be starred); `Options → Show all models` reveals the full union,
+ * including quotes-extra and not-found rows. Typing in the search box also
+ * searches the whole union so hidden models stay findable.
+ *
  * Manual association is always a modal with a flat, single-select list:
  * - provider level: pick one quotes provider only (token/coding plans are
  *   shown disabled and out of scope);
@@ -205,39 +211,6 @@ export function SettingsModelsQuotes({ t, api, tModels }: SettingsModelsQuotesPr
   )
 }
 
-/** localStorage key: per-provider-route collapse preference for the
- * "quotes extra" (dataset-only) rows. */
-const DATA_ONLY_COLLAPSED_KEY = 'llm-quotes.data-only-collapsed'
-
-/** Read the route → collapsed map ({} when empty/unavailable). */
-function loadDataOnlyCollapsed(): Record<string, boolean> {
-  try {
-    const raw = window.localStorage.getItem(DATA_ONLY_COLLAPSED_KEY)
-    if (raw === null) return {}
-    const parsed = JSON.parse(raw) as unknown
-    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-    const out: Record<string, boolean> = {}
-    for (const [route, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (route.length > 0 && typeof value === 'boolean') out[route] = value
-    }
-    return out
-  } catch {
-    return {}
-  }
-}
-
-/** Persist one route's collapse preference. */
-function saveDataOnlyCollapsed(route: string, collapsed: boolean): void {
-  try {
-    window.localStorage.setItem(
-      DATA_ONLY_COLLAPSED_KEY,
-      JSON.stringify({ ...loadDataOnlyCollapsed(), [route]: collapsed }),
-    )
-  } catch {
-    // Storage unavailable (private mode etc.); the preference is session-only.
-  }
-}
-
 /** One resolved row of a provider's quote block. */
 interface QuoteRow {
   readonly ref: { id: string; explicit: boolean; name?: string | null }
@@ -281,7 +254,10 @@ export function ProviderQuoteBlock({ t, quotes, displayName, api }: ProviderQuot
   const [savedFlash, setSavedFlash] = useState(false)
   const [detailModel, setDetailModel] = useState<ModelInfo | null>(null)
   const [optionsOpen, setOptionsOpen] = useState(false)
-  const [hideAllModels, setHideAllModels] = useState(false)
+  // One visibility switch: false = only watchlisted rows are shown (the
+  // default); true = every row is shown, including quotes-extra and
+  // not-found rows. Session-only by design so it always starts collapsed.
+  const [showAllModels, setShowAllModels] = useState(false)
   const optionsRef = useRef<HTMLDivElement>(null)
   const watchlist = useWatchlist(api)
 
@@ -329,13 +305,8 @@ export function ProviderQuoteBlock({ t, quotes, displayName, api }: ProviderQuot
     return { ref, quote, association, displayPrice }
   })
   const unmatchedCount = rows.filter((row) => row.quote === null).length
-  const matchedCount = rows.length - unmatchedCount
-  const [showNotFound, setShowNotFound] = useState(true)
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortState | null>(null)
-  const [dataOnlyCollapsed, setDataOnlyCollapsed] = useState<boolean>(
-    () => route.length > 0 ? (loadDataOnlyCollapsed()[route] ?? false) : false,
-  )
 
   // Dataset models that the harness catalog does not include at all: they
   // have no harness row, so they are appended as "quotes extra" rows. A
@@ -362,32 +333,28 @@ export function ProviderQuoteBlock({ t, quotes, displayName, api }: ProviderQuot
   // resolve to the same model), so the stats reconcile with the dataset.
   const matchedSlugCount = matchedSlugs.size
 
-  const updateDataOnlyCollapsed = useCallback((collapsed: boolean): void => {
-    setDataOnlyCollapsed(collapsed)
-    if (route.length > 0) saveDataOnlyCollapsed(route, collapsed)
-  }, [route])
-
-  // Any search or sort resets every collapse/hide state back to the default
-  // fully-expanded view so the whole union can be browsed.
-  const resetExpansion = useCallback((): void => {
-    setShowNotFound(true)
-    setHideAllModels(false)
-    setDataOnlyCollapsed(false)
-  }, [])
-
-  // Union list: harness rows (matched first, then not-found) plus the
-  // dataset-only rows. Search filters everything; sorting re-orders every
-  // priced row (matched + quotes extra) together, not-found rows stay at
-  // the bottom.
+  // Visible list. Default (watchlist-only) keeps starred rows only — both
+  // matched rows and quotes-extra rows can be starred; not-found rows have
+  // no dataset counterpart and are never watchable, so they show up solely
+  // in "show all" mode. Typing in the search box searches the whole union so
+  // hidden models stay findable; sorting re-orders every priced row
+  // together, not-found rows stay at the bottom.
   const visibleRows = useMemo(() => {
     const q = query.trim().toLowerCase()
     const matchesQuery = (row: QuoteRow): boolean =>
       q.length === 0 || (row.quote?.name ?? row.ref.name ?? row.ref.id).toLowerCase().includes(q)
-    const harnessMatched = rows.filter((row) => row.quote !== null && matchesQuery(row))
-    const harnessUnmatched = rows.filter((row) => row.quote === null && matchesQuery(row) && showNotFound)
-    const extras = dataOnlyRows.filter((row) => matchesQuery(row) && !dataOnlyCollapsed)
+    const showEverything = showAllModels || q.length > 0
+    const watched = (row: QuoteRow): boolean =>
+      row.quote !== null && watchlist.isWatched(watchlistKey(row.quote.provider.slug, row.quote.slug))
+    const pricedMatched = rows.filter((row) => row.quote !== null && matchesQuery(row))
+      .filter((row) => showEverything || watched(row))
+    const extras = dataOnlyRows.filter((row) => matchesQuery(row))
+      .filter((row) => showEverything || watched(row))
+    const notFound = showEverything
+      ? rows.filter((row) => row.quote === null && matchesQuery(row))
+      : []
     if (sort !== null) {
-      const priced = [...harnessMatched, ...extras]
+      const priced = [...pricedMatched, ...extras]
       priced.sort((a, b) => {
         const x = sortValueOf(a, sort.key)
         const y = sortValueOf(b, sort.key)
@@ -395,10 +362,10 @@ export function ProviderQuoteBlock({ t, quotes, displayName, api }: ProviderQuot
         if (y === null) return -1
         return (x < y ? -1 : x > y ? 1 : 0) * sort.dir
       })
-      return [...priced, ...harnessUnmatched]
+      return [...priced, ...notFound]
     }
-    return [...harnessMatched, ...harnessUnmatched, ...extras]
-  }, [rows, dataOnlyRows, showNotFound, dataOnlyCollapsed, query, sort])
+    return [...pricedMatched, ...notFound, ...extras]
+  }, [rows, dataOnlyRows, showAllModels, query, sort, watchlist.isWatched])
 
   const flashSaved = useCallback((): void => {
     setSavedFlash(true)
@@ -452,9 +419,8 @@ export function ProviderQuoteBlock({ t, quotes, displayName, api }: ProviderQuot
   // counts hooks per render, and the early returns (loading/error states)
   // skip the rest of the component.
   const toggleSort = useCallback((key: SortKey): void => {
-    resetExpansion()
     setSort((prev) => (prev !== null && prev.key === key ? { key, dir: prev.dir === 1 ? -1 : 1 } : { key, dir: 1 }))
-  }, [resetExpansion])
+  }, [])
 
   if (quotes.error !== null && provider === undefined) {
     return (
@@ -508,42 +474,16 @@ export function ProviderQuoteBlock({ t, quotes, displayName, api }: ProviderQuot
       </button>
       {optionsOpen && (
         <div className={css.optionsMenu}>
-          {matchedSlug !== null && unmatchedCount > 0 && (
+          {matchedSlug !== null && (
             <button
               type="button"
               className={css.optionsItem}
               onClick={() => {
-                setShowNotFound((visible) => !visible)
+                setShowAllModels((all) => !all)
                 setOptionsOpen(false)
               }}
             >
-              {showNotFound ? t('sq.hideNotFound') : t('sq.showNotFound', { count: unmatchedCount })}
-            </button>
-          )}
-          {matchedSlug !== null && dataOnlyCount > 0 && (
-            <button
-              type="button"
-              className={css.optionsItem}
-              onClick={() => {
-                updateDataOnlyCollapsed(!dataOnlyCollapsed)
-                setOptionsOpen(false)
-              }}
-            >
-              {dataOnlyCollapsed
-                ? t('sq.expandExtra', { count: dataOnlyCount })
-                : t('sq.collapseExtra', { count: dataOnlyCount })}
-            </button>
-          )}
-          {matchedSlug !== null && matchedCount > 0 && (
-            <button
-              type="button"
-              className={css.optionsItem}
-              onClick={() => {
-                setHideAllModels((hidden) => !hidden)
-                setOptionsOpen(false)
-              }}
-            >
-              {hideAllModels ? t('sq.showAllAssociated') : t('sq.hideAllModels')}
+              {showAllModels ? t('sq.showWatchedOnly') : t('sq.showAllModels')}
             </button>
           )}
           {matchedSlug === null ? (
@@ -624,7 +564,6 @@ export function ProviderQuoteBlock({ t, quotes, displayName, api }: ProviderQuot
               placeholder={t('sq.searchPlaceholder')}
               value={query}
               onChange={(event) => {
-                resetExpansion()
                 setQuery(event.target.value)
               }}
               aria-label={t('sq.searchPlaceholder')}
@@ -652,13 +591,13 @@ export function ProviderQuoteBlock({ t, quotes, displayName, api }: ProviderQuot
           <div className={css.sqHint}>{t('sq.loading')}</div>
         ) : showEmpty ? (
           <div className={css.sqHint}>{t('sq.noQuotes')}</div>
-        ) : hideAllModels ? (
-          <div className={css.sqHint}>{t('sq.modelsHidden')}</div>
         ) : (
           <div className={css.sqTableWrap}>
             {visibleRows.length === 0 ? (
               <div className={css.sqHint}>
-                {query.trim().length > 0 ? t('sq.noMatch') : t('sq.noQuotes')}
+                {query.trim().length > 0
+                  ? t('sq.noMatch')
+                  : (!showAllModels && totalCount > 0 ? t('sq.modelsHidden') : t('sq.noQuotes'))}
               </div>
             ) : (
               <table className={css.sqTable}>

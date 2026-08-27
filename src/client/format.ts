@@ -27,6 +27,73 @@ const CURRENCY_SYMBOLS: Readonly<Record<string, string>> = {
   BRL: 'R$',
 }
 
+/** Map non-standard currency codes to the ISO code used for FX lookup. */
+const CURRENCY_ALIASES: Readonly<Record<string, string>> = { CNH: 'CNY' }
+
+/** Canonical ISO code for FX lookup (unknown/empty → null). */
+export function canonCurrency(unit: string | null | undefined): string | null {
+  if (typeof unit !== 'string' || unit.length === 0) return null
+  const upper = unit.trim().toUpperCase()
+  return CURRENCY_ALIASES[upper] ?? upper
+}
+
+/**
+ * Convert a price value from `fromUnit` to `toUnit` using USD-based FX rates
+ * (`rates[code]` = units per 1 USD, e.g. from open.er-api.com). Returns `null`
+ * when either code is unknown or a rate is non-positive — callers then fall
+ * back to showing the native currency. Same-currency conversions return the
+ * value unchanged.
+ */
+export function convertCurrency(
+  value: number,
+  fromUnit: string | null | undefined,
+  toUnit: string | null | undefined,
+  rates: Readonly<Record<string, number>>,
+): number | null {
+  const from = canonCurrency(fromUnit)
+  const to = canonCurrency(toUnit)
+  if (from === null || to === null) return null
+  if (from === to) return value
+  const fromRate = rates[from]
+  const toRate = rates[to]
+  if (typeof fromRate !== 'number' || typeof toRate !== 'number' || fromRate <= 0) return null
+  return value * toRate / fromRate
+}
+
+/** A stable key identifying a price row's pricing tier (labels/tier text). */
+export function priceTierKey(price: PriceInfo): string {
+  return [price.tierLabel, price.processingTier]
+    .filter((part): part is string => typeof part === 'string' && part.length > 0)
+    .map((part) => part.toLowerCase())
+    .join('|')
+}
+
+/** The human-readable tier label of a price row, when it carries one. */
+export function priceTierLabel(price: PriceInfo): string | null {
+  if (typeof price.tierLabel === 'string' && price.tierLabel.length > 0) return price.tierLabel
+  if (typeof price.processingTier === 'string' && price.processingTier.length > 0) return price.processingTier
+  return null
+}
+
+/** True when a price row is a discounted / off-peak / promotional tier. */
+export function isDiscountedPrice(price: PriceInfo): boolean {
+  return /off.?peak|off.?time|discount|promo|sale|reduced|non.?peak|non.?prime/.test(priceTierKey(price))
+}
+
+/**
+ * Choose a model's price row for a comparison: prefer the standard
+ * (non-discounted) row so every column compares peak-to-peak / standard-to-
+ * standard. DeepSeek-style providers expose off-peak discount rows alongside
+ * the standard price; standardizing on the standard row keeps the comparison
+ * apples-to-apples. A model with only discount rows falls back to its display
+ * price (the discounted one is then shown, flagged via `isDiscountedPrice`).
+ */
+export function chooseComparePrice(model: { prices: readonly PriceInfo[]; price: PriceInfo }): PriceInfo {
+  const prices = model.prices.length > 0 ? model.prices : [model.price]
+  const standard = prices.find((p) => !isDiscountedPrice(p))
+  return standard ?? pickDisplayPrice(prices) ?? model.price
+}
+
 /** The display symbol for one price row's currency; '' defaults to USD. */
 export function currencySymbol(unit: string | null | undefined): string {
   if (typeof unit !== 'string' || unit.length === 0) return '$'

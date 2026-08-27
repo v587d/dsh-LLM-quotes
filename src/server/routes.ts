@@ -15,6 +15,7 @@ import { overviewFromSnapshot, type LlmRatesService } from '../llmrates.ts'
 import type { ManualAssociation, ModelInfo, PriceInfo, WatchlistStatus } from '../types.ts'
 import { LlmQuotesStore } from './store.ts'
 import * as watchlist from './watchlist.ts'
+import { getFxRates } from './fx.ts'
 
 /** Browser-facing API prefix. */
 export const LLM_QUOTES_API_PREFIX = '/api/llm-quotes'
@@ -104,6 +105,7 @@ export function makeLlmQuotesRoutes(service: LlmRatesService, store: LlmQuotesSt
     getRoute(`${LLM_QUOTES_API_PREFIX}/meta`, () => service.getMeta()),
     getRoute(`${LLM_QUOTES_API_PREFIX}/providers`, () => service.getProviders()),
     getRoute(`${LLM_QUOTES_API_PREFIX}/modalities`, () => service.getModalities()),
+    getRoute(`${LLM_QUOTES_API_PREFIX}/rates`, () => getFxRates()),
     {
       kind: 'exact',
       path: `${LLM_QUOTES_API_PREFIX}/models`,

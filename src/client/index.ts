@@ -38,6 +38,7 @@ import type {
   WatchlistRecord,
   WatchlistStatus,
 } from '../types.ts'
+import type { FxResponse } from '../types.ts'
 import { en, zh, NS } from './locales.ts'
 import { SettingsModelsQuotes, type SettingsModelsQuotesProps } from './SettingsModelsQuotes.tsx'
 import {
@@ -55,7 +56,7 @@ export { priceSignalOf, type PriceSignal, type PriceSignalField } from './signal
 export { useQuotesData, type QuotesDataState } from './useQuotesData.ts'
 export * from './matching.ts'
 export { findModelsSection, providerCardsOf, cardDisplayName } from './modelsSectionDom.ts'
-export type { WatchlistStatus, PriceSnapshot, WatchlistRecord, PriceChangeResult } from '../types.ts'
+export type { WatchlistStatus, PriceSnapshot, WatchlistRecord, PriceChangeResult }
 
 /** Client-side API surface for the Settings → Models quote blocks. */
 export interface LlmQuotesApi {
@@ -65,6 +66,8 @@ export interface LlmQuotesApi {
   modalities(): Promise<string[]>
   /** Dataset metadata (source update date vs local fetch time). */
   meta(): Promise<MetaResponse>
+  /** FX rates for normalizing mixed currencies in the compare table. */
+  rates(): Promise<FxResponse>
   refresh(): Promise<OverviewResponse>
   getSettings(): Promise<SettingsResponse>
   updateSettings(partial: { refreshMinutes?: number; compareLimit?: number }): Promise<SettingsResponse>
@@ -224,6 +227,7 @@ function makeApi(connection: ConnectionHandle | undefined): LlmQuotesApi {
     },
     providers: () => apiFetch<ProviderInfo[]>('/api/llm-quotes/providers'),
     meta: () => apiFetch<MetaResponse>('/api/llm-quotes/meta'),
+    rates: () => apiFetch<FxResponse>('/api/llm-quotes/rates'),
     modalities: () => apiFetch<string[]>('/api/llm-quotes/modalities'),
     refresh: () => apiFetch<OverviewResponse>('/api/llm-quotes/refresh', { method: 'POST' }),
     getSettings: () => apiFetch<SettingsResponse>('/api/llm-quotes/settings'),

@@ -632,6 +632,11 @@
   overflow: hidden;
 }
 
+/* Widen the modal when a comparison table is showing (up to 12 columns). */
+.modalCardWide {
+  max-width: 1160px;
+}
+
 .modalHeader {
   display: flex;
   align-items: flex-start;
@@ -743,6 +748,350 @@
 
 .detailValueLink:hover {
   text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ */
+/* Model detail compare: header button + provider tree + compare table  */
+/* ------------------------------------------------------------------ */
+
+/* Right-hand header group holding the compare button and the close. */
+.modalHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex: none;
+}
+
+/* Anchor for the compare dropdown. */
+.compareWrap {
+  position: relative;
+}
+
+/* The compare dropdown: a provider tree that populates lazily. */
+.compareMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 80;
+  min-width: 260px;
+  max-width: 320px;
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+.compareTree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.compareGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Provider node: a row that expands to reveal its models. */
+.compareProvider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.compareProvider:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06));
+}
+
+.compareProvider:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.compareProviderOpen {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06));
+}
+
+.compareProviderName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.compareChevron {
+  flex: none;
+  width: 12px;
+  color: var(--dsw-alias-label-caption, #81858c);
+}
+
+.compareProviderCount {
+  flex: none;
+  font-size: 10px;
+  color: var(--dsw-alias-label-caption, #81858c);
+  border: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
+  border-radius: 999px;
+  padding: 0 6px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.compareLoadingInline {
+  flex: none;
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-size: 11px;
+}
+
+/* Indented model checkbox rows inside an expanded provider node. */
+.compareChildren {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px 0 2px 20px;
+}
+
+.compareModelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-primary, #0f1115);
+  cursor: pointer;
+}
+
+.compareModelRow:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06));
+}
+
+.compareModelRow input {
+  margin: 0;
+}
+
+.compareLoading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-size: 12px;
+}
+
+.compareEmpty {
+  padding: 8px 10px;
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-size: 12px;
+}
+
+/* Comparison table (target column first, each selected model a column).
+ * Fixed layout so column widths are compact and independent of the longest
+ * cell value; long content truncates with an ellipsis instead of expanding
+ * the column. */
+.compareTableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
+  border-radius: 8px;
+}
+
+.compareTable {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.compareTable th,
+.compareTable td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.04));
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.compareTable th {
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-weight: 500;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+}
+
+.compareTable tr:last-child td {
+  border-bottom: 0;
+}
+
+/* The leftmost "field" column: fixed width, subtle label. */
+.compareFieldTh,
+.compareFieldTd {
+  width: 118px;
+  color: var(--dsw-alias-label-secondary, #61666b);
+}
+
+.compareFieldTh {
+  font-weight: 600;
+}
+
+.compareFieldTd {
+  font-size: 11px;
+}
+
+/* The "best" value of a row (max for capacity, min for price). */
+.compareBest {
+  font-weight: 700;
+  color: var(--dsw-alias-state-business-primary, #3964fe);
+  background: var(--dsw-alias-state-business-bg, rgba(57, 100, 254, 0.06));
+}
+
+/* Column header cell: model name (truncates) + a remove button. */
+.compareColHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.compareColHeader .modelName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compareRemove {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--dsw-alias-label-caption, #81858c);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  border-radius: 4px;
+}
+
+.compareRemove:hover {
+  color: var(--dsw-alias-state-error-primary, #dc2626);
+  background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06));
+}
+
+/* Small provider caption under each model-name column header. */
+.compareColProvider {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--dsw-alias-label-caption, #81858c);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Compare section header: title left, live info cluster right-aligned. */
+.compareHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
+  padding-bottom: 6px;
+}
+
+.compareHeaderTitle {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dsw-alias-label-caption, #81858c);
+}
+
+.compareHeaderInfo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-caption, #81858c);
+}
+
+.compareLimitText {
+  white-space: nowrap;
+}
+
+.compareLimitFull {
+  color: var(--dsw-alias-state-error-primary, #dc2626);
+  font-weight: 600;
+}
+
+.compareFxNote {
+  white-space: nowrap;
+  color: var(--dsw-static-amber-600, #b45309);
+}
+
+/* A tiny tag marking a column that is on a discounted (off-peak) tier. */
+.compareTierTag {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--dsw-static-amber-600, #b45309);
+  background: var(--dsw-alias-warn-bg, rgba(245, 158, 11, 0.12));
+  border-radius: 999px;
+  padding: 0 6px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+/* The filled Compare trigger in the modal header. */
+.compareButton {
+  white-space: nowrap;
+}
+
+/* Footer of the compare dropdown: count vs limit. */
+.compareFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 6px 8px 2px;
+  border-top: 1px solid var(--dsw-alias-border-l1, rgba(0, 0, 0, 0.06));
+  font-size: 11px;
+  color: var(--dsw-alias-label-caption, #81858c);
+}
+
+.compareCount {
+  font-variant-numeric: tabular-nums;
+}
+
+.compareCountFull {
+  color: var(--dsw-alias-state-error-primary, #dc2626);
+  font-weight: 600;
+}
+
+/* A disabled model row (target model, or a new add past the cap). */
+.compareModelRowDisabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* ------------------------------------------------------------------ */
